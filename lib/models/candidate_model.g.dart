@@ -6,7 +6,7 @@ part of 'candidate_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Candidate _$CandidateFromJson(Map<String, dynamic> json) => Candidate(
+CandidateModel _$CandidateFromJson(Map<String, dynamic> json) => CandidateModel(
       id: json['id'] as String,
       name: json['name'] as String,
       location: json['location'] as String,
@@ -15,7 +15,8 @@ Candidate _$CandidateFromJson(Map<String, dynamic> json) => Candidate(
           (json['skills'] as List<dynamic>).map((e) => e as String).toList(),
     );
 
-Map<String, dynamic> _$CandidateToJson(Candidate instance) => <String, dynamic>{
+Map<String, dynamic> _$CandidateToJson(CandidateModel instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
       'location': instance.location,

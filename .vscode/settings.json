@@ -11,6 +11,7 @@
     "appbar",
     "Bengaluru",
     "buildlog",
+    "COCOAPODS",
     "Cupertino",
     "dotenv",
     "Gurgaon",
@@ -18,6 +19,8 @@
     "Mehta",
     "Neha",
     "Noida",
+    "podfile",
+    "podhelper",
     "Priya",
     "Rajesh",
     "Rohit",
@@ -28,6 +31,7 @@
     "Symbolication",
     "Verma",
     "Vikash",
+    "xcconfig",
     "Yadav"
   ]
 }
