@@ -1,45 +1,22 @@
-import 'package:career_genie_bot/bot/career_bot.dart';
-import 'package:career_genie_bot/models/candidate_model.dart';
-import 'package:career_genie_bot/services/candidate_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:career_genie_bot/bloc/candidate_bloc.dart';
 
-class BotScreen extends StatefulWidget {
-  const BotScreen({super.key});
+class BotScreen extends StatelessWidget {
+  BotScreen({super.key});
 
-  @override
-  State<BotScreen> createState() => _BotScreenState();
-}
-
-class _BotScreenState extends State<BotScreen> {
   final _controller = TextEditingController();
-  List<CandidateModel> _results = [];
-  bool _loading = false;
 
-  Future<void> _search() async {
+  void _search(BuildContext context) {
     FocusScope.of(context).unfocus();
     final prompt = _controller.text.trim();
-
     if (prompt.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a requirement.')),
       );
       return;
     }
-    setState(() => _loading = true);
-
-    final candidates = await CandidateService.fetchLocalCandidates();
-    final bot = CareerBot(dotenv.env['GEMINI_API_KEY']!);
-
-    final matches = await bot.findCandidates(
-      candidates: candidates,
-      prompt: prompt,
-    );
-
-    setState(() {
-      _results = matches;
-      _loading = false;
-    });
+    context.read<CandidateBloc>().add(SearchCandidates(prompt));
   }
 
   @override
@@ -59,34 +36,47 @@ class _BotScreenState extends State<BotScreen> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _controller.clear();
-                    setState(() => _results.clear());
+                    context.read<CandidateBloc>().add(ClearResults());
                   },
                 ),
               ),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _loading ? null : _search,
-              child: const Text('Find Candidates'),
+            BlocBuilder<CandidateBloc, CandidateState>(
+              builder: (context, state) {
+                final loading = state is CandidateLoading;
+                return ElevatedButton(
+                  onPressed: loading ? null : () => _search(context),
+                  child: const Text('Find Candidates'),
+                );
+              },
             ),
             const SizedBox(height: 20),
-            if (_loading) const CircularProgressIndicator(),
-            if (!_loading && _results.isEmpty && _controller.text.isNotEmpty)
-              const Text('No matching candidates found.'),
-            if (!_loading)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (_, i) {
-                    final c = _results[i];
-                    return ListTile(
-                      title: Text(c.name),
-                      subtitle: Text(
-                          '${c.experience} yrs | ${c.location} | ${c.skills.join(', ')}'),
-                    );
-                  },
-                ),
-              ),
+            BlocBuilder<CandidateBloc, CandidateState>(
+              builder: (context, state) {
+                if (state is CandidateLoading) {
+                  return const CircularProgressIndicator();
+                } else if (state is CandidateNoMatch && _controller.text.isNotEmpty) {
+                  return const Text('No matching candidates found.');
+                } else if (state is CandidateLoaded) {
+                  return Expanded(
+                    child: ListView.builder(
+                      itemCount: state.candidates.length,
+                      itemBuilder: (_, i) {
+                        final c = state.candidates[i];
+                        return ListTile(
+                          title: Text(c.name),
+                          subtitle: Text('${c.experience} yrs | ${c.location} | ${c.skills.join(', ')}'),
+                        );
+                      },
+                    ),
+                  );
+                } else if (state is CandidateError) {
+                  return Text('Error: ${state.message}');
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
       ),
